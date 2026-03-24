@@ -32,10 +32,10 @@ jobs:
           echo "|---------|------------|-------------|-----------|-------|" >> docs/comparison-table.md
           echo "| DC2290A-A | 18-bit | 15 Msps | LVDS | Needs FPGA upgrade |" >> docs/comparison-table.md
           echo "| DC2290A-B | 16-bit | 15 Msps | LVDS | Driver update required |" >> docs/comparison-table.md
-          echo "| DC2290A-C | 18-bit | 12 Msps | LVDS | Timing calibration |" >> docs/comparison-table.md
-          echo "| DC2290A-D | 16-bit | 12 Msps | LVDS | Documentation alignment |" >> docs/comparison-table.md
-          echo "| DC2290A-E | 18-bit | 10 Msps | LVDS | Performance benchmarking |" >> docs/comparison-table.md
-          echo "| DC2290A-F | 16-bit | 10 Msps | LVDS | Legacy software replacement |" >> docs/comparison-table.md
+          echo "| DC2290A-C | 18-bit | 10 Msps | LVDS | Timing calibration |" >> docs/comparison-table.md
+          echo "| DC2290A-D | 16-bit | 10 Msps | LVDS | Documentation alignment |" >> docs/comparison-table.md
+          echo "| DC2290A-E | 18-bit |  5 Msps | LVDS | Performance benchmarking |" >> docs/comparison-table.md
+          echo "| DC2290A-F | 16-bit |  5 Msps | LVDS | Legacy software replacement |" >> docs/comparison-table.md
 
       - name: Commit and Push Outputs
         run: |
