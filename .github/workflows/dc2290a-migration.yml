@@ -1,17 +1,20 @@
 name: DC2290A-x Migration Workflow
 
-env:
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
-
 on:
-  workflow_dispatch:   # Allows manual trigger from GitHub Actions tab
+  workflow_dispatch:
+
+permissions:
+  contents: write   # Allow pushing changes
 
 jobs:
   migration-checklist:
     runs-on: ubuntu-latest
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
     steps:
       - name: Checkout repo
-        uses: actions/checkout@v4   # Updated to v4 for Node.js 24 support
+        uses: actions/checkout@v4
 
       - name: Generate Migration Checklist
         run: |
@@ -29,15 +32,17 @@ jobs:
           echo "|---------|------------|-------------|-----------|-------|" >> docs/comparison-table.md
           echo "| DC2290A-A | 18-bit | 15 Msps | LVDS | Needs FPGA upgrade |" >> docs/comparison-table.md
           echo "| DC2290A-B | 16-bit | 15 Msps | LVDS | Driver update required |" >> docs/comparison-table.md
-          echo "| DC2290A-C | 18-bit | 10 Msps | LVDS | Timing calibration |" >> docs/comparison-table.md
-          echo "| DC2290A-D | 16-bit | 10 Msps | LVDS | Documentation alignment |" >> docs/comparison-table.md
-          echo "| DC2290A-E | 18-bit |  5 Msps | LVDS | Performance benchmarking |" >> docs/comparison-table.md
-          echo "| DC2290A-F | 16-bit |  5 Msps | LVDS | Legacy software replacement |" >> docs/comparison-table.md
+          echo "| DC2290A-C | 18-bit | 12 Msps | LVDS | Timing calibration |" >> docs/comparison-table.md
+          echo "| DC2290A-D | 16-bit | 12 Msps | LVDS | Documentation alignment |" >> docs/comparison-table.md
+          echo "| DC2290A-E | 18-bit | 10 Msps | LVDS | Performance benchmarking |" >> docs/comparison-table.md
+          echo "| DC2290A-F | 16-bit | 10 Msps | LVDS | Legacy software replacement |" >> docs/comparison-table.md
 
       - name: Commit and Push Outputs
         run: |
           git config --global user.name "github-actions"
           git config --global user.email "actions@github.com"
           git add docs/migration-checklist.md docs/comparison-table.md
-          git commit -m "Generated migration checklist and comparison table"
+          git commit -m "Generated migration checklist and comparison table" || echo "No changes to commit"
           git push
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
