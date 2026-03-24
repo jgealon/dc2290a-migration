@@ -1,5 +1,8 @@
 name: DC2290A-x Migration Workflow
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 on:
   workflow_dispatch:   # Allows manual trigger from GitHub Actions tab
 
@@ -8,7 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4   # Updated to v4 for Node.js 24 support
 
       - name: Generate Migration Checklist
         run: |
@@ -26,10 +29,10 @@ jobs:
           echo "|---------|------------|-------------|-----------|-------|" >> docs/comparison-table.md
           echo "| DC2290A-A | 18-bit | 15 Msps | LVDS | Needs FPGA upgrade |" >> docs/comparison-table.md
           echo "| DC2290A-B | 16-bit | 15 Msps | LVDS | Driver update required |" >> docs/comparison-table.md
-          echo "| DC2290A-C | 18-bit | 12 Msps | LVDS | Timing calibration |" >> docs/comparison-table.md
-          echo "| DC2290A-D | 16-bit | 12 Msps | LVDS | Documentation alignment |" >> docs/comparison-table.md
-          echo "| DC2290A-E | 18-bit | 10 Msps | LVDS | Performance benchmarking |" >> docs/comparison-table.md
-          echo "| DC2290A-F | 16-bit | 10 Msps | LVDS | Legacy software replacement |" >> docs/comparison-table.md
+          echo "| DC2290A-C | 18-bit | 10 Msps | LVDS | Timing calibration |" >> docs/comparison-table.md
+          echo "| DC2290A-D | 16-bit | 10 Msps | LVDS | Documentation alignment |" >> docs/comparison-table.md
+          echo "| DC2290A-E | 18-bit |  5 Msps | LVDS | Performance benchmarking |" >> docs/comparison-table.md
+          echo "| DC2290A-F | 16-bit |  5 Msps | LVDS | Legacy software replacement |" >> docs/comparison-table.md
 
       - name: Commit and Push Outputs
         run: |
