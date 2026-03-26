@@ -1,46 +1,48 @@
-# CN0577 Migration to Zed Board (FMC)
+# DC2290A-x Migration to Zed Board (FMC)
 
-Migration of CN0577 Circuits from the Lab reference design to Xilinx Zed Board platform using FMC (FPGA Mezzanine Card) interface.
+Migration of DC2290A-x legacy evaluation boards to Xilinx Zed Board platform using FMC (FPGA Mezzanine Card) interface, following [CN0577 reference design](https://www.analog.com/en/resources/reference-designs/circuits-from-the-lab/CN0577.html) best practices.
 
 ## Overview
 
-This repository documents the migration of the [CN0577 reference design](https://www.analog.com/en/resources/reference-designs/circuits-from-the-lab/CN0577.html) from legacy DC2290A evaluation boards to a modern Xilinx Zynq-based platform. The new design uses a single FMC board compatible with the Zed Board that supports all 6 ADC variants.
+This repository documents the migration of **six legacy DC2290A evaluation boards** (DC2290A-A through DC2290A-F) to a modern Xilinx Zynq-based platform. The goal is to consolidate all 6 variants into a **single FMC card** compatible with the Zed Board, using the same LTC238x ADC family and design approach proven in the CN0577 reference design.
 
 ### Migration Goals
 
-- **Single Board Design**: One FMC card supporting all 6 ADC variants
+- **Consolidate 6 Boards**: Replace DC2290A-A/B/C/D/E/F with single FMC design
 - **Modern Platform**: Xilinx Zynq-7000 SoC (Zed Board)
-- **Standard Interface**: FMC (VITA 57.1) connector
-- **Improved Performance**: Leverage FPGA processing capabilities
-- **Better Integration**: Direct integration with Xilinx tools and IPs
+- **Standard Interface**: FMC (VITA 57.1) connector for portability
+- **Improved Performance**: Leverage FPGA processing vs. USB bottleneck
+- **CN0577-Inspired**: Follow proven CN0577 design patterns and best practices
 
-## CN0577 Overview
+## Project Background
 
-CN0577 is a precision data acquisition system reference design. This migration replaces the legacy DC2290A boards with a modern FMC-based solution.
+The DC2290A family consists of 6 legacy evaluation boards for high-speed ADC characterization. This project consolidates them into a modern, unified platform.
 
-### Legacy Platform (Current)
-- **Boards**: DC2290A-A through DC2290A-F (6 variants)
+### Legacy Platform (DC2290A Boards)
+- **Boards**: DC2290A-A, DC2290A-B, DC2290A-C, DC2290A-D, DC2290A-E, DC2290A-F (6 separate boards)
+- **ADCs**: LTC2387/2386/2385 family (16/18-bit, 5/10/15 Msps)
 - **Interface**: LVDS to DC718 USB adapter
-- **Limitations**: Multiple boards, USB bottleneck, limited processing
+- **Limitations**: 6 different boards, USB bottleneck, limited FPGA processing
 
-### Target Platform (New)
-- **Board**: Single FMC card for Zed Board
+### Target Platform (New FMC Design)
+- **Board**: Single FMC card for Zed Board supporting all 6 variants
 - **SoC**: Xilinx Zynq-7000 (XC7Z020-CLG484)
 - **Interface**: FMC LPC (Low Pin Count) connector
-- **Benefits**: Unified design, FPGA processing, extensibility
+- **Design Reference**: CN0577 (proven ADC characterization design)
+- **Benefits**: One board, FPGA processing, better performance, easier inventory
 
-## ADC Variant Support
+## DC2290A Variant Support
 
-The FMC board supports 6 LTC238x ADC variants through component options. All variants share a common footprint and interface, using ADI's proven [AXI_LTC2387 IP core](https://analogdevicesinc.github.io/hdl/library/axi_ltc2387/index.html).
+Each DC2290A board variant will be supported on the single FMC design through component options or configuration. All LTC238x ADCs share a common footprint and interface, using ADI's proven [AXI_LTC2387 IP core](https://analogdevicesinc.github.io/hdl/library/axi_ltc2387/index.html).
 
-| Variant | ADC Part Number | Resolution | Sample Rate | Interface | Power |
-|---------|-----------------|------------|-------------|-----------|-------|
-| Config A | **LTC2387-18** | 18-bit | 15 Msps | 6-lane LVDS | 170 mW |
-| Config B | **LTC2387-16** | 16-bit | 15 Msps | 6-lane LVDS | 170 mW |
-| Config C | **LTC2386-18** | 18-bit | 10 Msps | 6-lane LVDS | 140 mW |
-| Config D | **LTC2386-16** | 16-bit | 10 Msps | 6-lane LVDS | 140 mW |
-| Config E | **LTC2385-18** | 18-bit | 5 Msps | 6-lane LVDS | 115 mW |
-| Config F | **LTC2385-16** | 16-bit | 5 Msps | 6-lane LVDS | 115 mW |
+| Legacy Board | ADC Part Number | Resolution | Sample Rate | Interface | Power |
+|--------------|-----------------|------------|-------------|-----------|-------|
+| **DC2290A-A** | LTC2387-18 | 18-bit | 15 Msps | 6-lane LVDS | 170 mW |
+| **DC2290A-B** | LTC2387-16 | 16-bit | 15 Msps | 6-lane LVDS | 170 mW |
+| **DC2290A-C** | LTC2386-18 | 18-bit | 10 Msps | 6-lane LVDS | 140 mW |
+| **DC2290A-D** | LTC2386-16 | 16-bit | 10 Msps | 6-lane LVDS | 140 mW |
+| **DC2290A-E** | LTC2385-18 | 18-bit | 5 Msps | 6-lane LVDS | 115 mW |
+| **DC2290A-F** | LTC2385-16 | 16-bit | 5 Msps | 6-lane LVDS | 115 mW |
 
 **Key Features** (All Variants):
 - Ultra-low noise: 89 dB SNR (typ)
@@ -60,7 +62,7 @@ The FMC board supports 6 LTC238x ADC variants through component options. All var
 - **Compact Form Factor**: Standard FMC card size
 
 ### FPGA Integration
-- **ADI HDL IP Core**: Uses proven [AXI_LTC2387](https://analogdevicesinc.github.io/hdl/library/axi_ltc2387/) IP from ADI HDL library
+- **ADI HDL IP Core**: Uses proven [AXI_LTC2387](https://analogdevicesinc.github.io/hdl/library/axi_ltc2387/) IP (same as CN0577)
 - **Zynq PS**: ARM Cortex-A9 dual-core processor for control
 - **FPGA Fabric**: High-speed LVDS interface and data capture
 - **AXI Interfaces**: AXI-Lite control, AXI-Stream data output
@@ -101,23 +103,23 @@ cd dc2290a-migration
 
 # Flash FPGA bitstream (from Zed Board Linux)
 cd fpga/
-./program_fpga.sh cn0577_fmc.bit
+./program_fpga.sh dc2290a_fmc.bit
 
 # Install Python support
 cd software/python/
 pip install -e .
 
-# Run test capture
-python examples/basic_capture.py --variant config-a
+# Run test capture (specify which DC2290A variant)
+python examples/basic_capture.py --board dc2290a-a
 ```
 
 ### Quick Test
 
 ```python
-from cn0577_fmc import CN0577
+from dc2290a_fmc import DC2290A
 
-# Initialize with variant configuration
-adc = CN0577(variant='config-a', sample_rate=15e6)
+# Initialize with board variant (replaces physical board)
+adc = DC2290A(variant='dc2290a-a', sample_rate=15e6)
 
 # Capture data
 data = adc.capture(num_samples=16384)
@@ -185,26 +187,26 @@ This project is licensed under the Apache License 2.0 - see the [LICENSE](LICENS
 
 ## Key Design Decisions
 
-### Why Zed Board?
-- **Proven Platform**: Widely used Zynq-7000 development board
+### Why Consolidate into Single FMC Board?
+- **Inventory**: One board SKU instead of 6 different DC2290A boards
+- **Pin Compatibility**: All LTC238x ADCs share same footprint
+- **Flexibility**: Software-configurable for any variant
+- **Cost**: Single PCB design and assembly process
+- **Maintenance**: One design to support and update
+
+### Why Zed Board Platform?
+- **Proven**: Widely used Zynq-7000 development board
 - **FMC Support**: Standard FMC LPC connector
+- **CN0577 Reference**: Follows proven evaluation board approach
 - **Community**: Large user base and resources
-- **Cost-Effective**: Affordable for development and deployment
 - **Linux Support**: Mature PetaLinux BSP
 
-### Why FMC Interface?
-- **Standard**: VITA 57.1 industry standard
-- **Portability**: Compatible with other FMC carrier boards
-- **Pin Count**: FMC LPC sufficient for LVDS data and control
-- **Mechanical**: Robust connector and mounting
-- **Future-Proof**: Upgradeable to other Zynq platforms
-
-### Single Board for 6 Variants
-- **Component Options**: Populate different ADC parts
-- **Software Configuration**: Runtime variant selection
-- **Pin Compatibility**: ADCs share common pinout
-- **Cost Efficiency**: Single PCB design and assembly
-- **Simplified Inventory**: One board SKU
+### Why Follow CN0577 Design?
+- **Proven Design**: CN0577 is a validated ADC characterization platform
+- **Same ADCs**: Uses LTC238x family (same as DC2290A boards)
+- **ADI IP Core**: Leverages AXI_LTC2387 (production-tested)
+- **Best Practices**: Signal conditioning, layout, FPGA architecture
+- **Reference**: Complete schematics and documentation available
 
 ## Migration Advantages
 
@@ -221,14 +223,15 @@ This project is licensed under the Apache License 2.0 - see the [LICENSE](LICENS
 ## Support
 
 For questions or issues:
-- **CN0577 Design**: Refer to [Analog Devices CN0577 page](https://www.analog.com/CN0577)
-- **FMC Card Issues**: Open an issue in this repository
+- **DC2290A Boards**: Legacy board documentation and specifications
+- **CN0577 Reference**: [Analog Devices CN0577 page](https://www.analog.com/CN0577) for design patterns
+- **FMC Migration Issues**: Open an issue in this repository
 - **Zed Board Support**: [Xilinx/Avnet support forums](https://www.xilinx.com)
-- **General Migration**: Contact the project team
+- **Project Questions**: Contact the migration team
 
 ## Acknowledgments
 
-- **Analog Devices**: CN0577 reference design and technical support
+- **Analog Devices**: DC2290A legacy boards, CN0577 reference design, HDL IP cores
 - **Xilinx/AMD**: Zynq platform and development tools
 - **Avnet**: Zed Board platform
 - **Contributors**: See [CONTRIBUTORS.md](CONTRIBUTORS.md)
