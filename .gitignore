@@ -1,55 +1,202 @@
-# Prerequisites
-*.d
+# General
+*.log
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
 
-# Object files
-*.o
-*.ko
-*.obj
+# Hardware Design Files
+*.zip
+*.rar
+gerbers/*.zip
+hardware/*/backup/
+hardware/*/history/
+*.bak
+*.DBK
+
+# Altium
+History/
+__Previews/
+Project Logs for */
+
+# OrCAD/Cadence
+allegro.jrl
+*.dml
+*.lst
+*.mnl
+
+# FPGA/Vivado
+fpga/vivado/*.cache/
+fpga/vivado/*.hw/
+fpga/vivado/*.ip_user_files/
+fpga/vivado/*.runs/
+fpga/vivado/*.sim/
+fpga/vivado/*.xpr.user
+fpga/vivado/*.xpr
+*.jou
+*.log
+*.pb
+*.wdb
+*.wcfg
+vivado*.backup.*
+.Xil/
+*.hbs
+fsm_encoding.os
+
+# Vivado Build Outputs
+*.bit
+*.ltx
+*.mmi
+*.prm
+*_wrapper.xsa
+implementation_*/
+synthesis_*/
+
+# Vitis/SDK
 *.elf
-
-# Linker output
-*.ilk
-*.map
-*.exp
-
-# Precompiled Headers
-*.gch
-*.pch
-
-# Libraries
-*.lib
+*.elf.size
+*.o
+*.d
 *.a
-*.la
-*.lo
+.metadata/
+RemoteSystemsTempFiles/
+workspace/
+.analytics/
 
-# Shared objects (inc. Windows DLLs)
-*.dll
+# PetaLinux
+fpga/petalinux/build/
+fpga/petalinux/images/
+fpga/petalinux/components/
+fpga/petalinux/.petalinux/
+*.bb-
+*.bbappend-
+*.swu
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
 *.so
-*.so.*
-*.dylib
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+pip-wheel-metadata/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+*.cover
+.hypothesis/
+*.mo
+*.pot
+venv/
+ENV/
+env/
 
-# Executables
-*.exe
-*.out
-*.app
-*.i*86
-*.x86_64
+# MATLAB
+*.asv
+*.m~
+slprj/
+*.autosave
+*.slxc
+
+# Node.js / Web
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.npm
+.eslintcache
+software/web/frontend/build/
+software/web/backend/__pycache__/
+
+# Data Files
+data/raw/*.bin
+data/raw/*.dat
+data/raw/*.csv
+*.hdf5
+*.mat
+data/reports/*.pdf
+
+# Test Results
+test_results/
+*.junit
+coverage.xml
+
+# Build Artifacts
+*.bin
 *.hex
+*.uf2
+*.dfu
+boot.bin
+BOOT.BIN
+image.ub
+devicetree.dtb
 
-# Debug files
-*.dSYM/
-*.su
-*.idb
-*.pdb
+# Simulation
+*.vcd
+*.saif
+*.fsdb
+*.shm
+simv*
+csrc/
+*.daidir/
+work/
+transcript
 
-# Kernel Module Compile Results
-*.mod*
-*.cmd
-.tmp_versions/
-modules.order
-Module.symvers
-Mkfile.old
-dkms.conf
+# IDE
+.vscode/
+.idea/
+*.sublime-*
+*.code-workspace
 
-# debug information files
-*.dwo
+# Documentation Build
+docs/_build/
+docs/_static/
+docs/_templates/
+site/
+
+# LaTeX
+*.aux
+*.fdb_latexmk
+*.fls
+*.synctex.gz
+*.toc
+
+# Temporary Files
+temp/
+tmp/
+*.tmp
+*_temp.*
+
+# Archives
+*.tar.gz
+*.tgz
+*.bz2
+*.7z
+
+# OS Generated
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Desktop.ini
+
+# Project Specific
+# Uncomment if you want to ignore specific variants
+# hardware/bom/bom_variant_*.csv
+# data/baseline/*.csv

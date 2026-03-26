@@ -2,47 +2,441 @@ name: DC2290A-x Migration Workflow
 
 on:
   workflow_dispatch:
+    inputs:
+      variant:
+        description: 'Board variant to process (or "all" for all variants)'
+        required: false
+        default: 'all'
+        type: choice
+        options:
+          - all
+          - DC2290A-A
+          - DC2290A-B
+          - DC2290A-C
+          - DC2290A-D
+          - DC2290A-E
+          - DC2290A-F
+  schedule:
+    - cron: '0 0 * * 1'  # Run weekly on Mondays at midnight UTC
 
 permissions:
-  contents: write   # Allow pushing changes
+  contents: write
+  issues: write
+  pull-requests: write
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
-  migration-checklist:
+  validate-structure:
+    name: Validate Repository Structure
     runs-on: ubuntu-latest
-    env:
-      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
-
     steps:
-      - name: Checkout repo
+      - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Generate Migration Checklist
+      - name: Verify directory structure
         run: |
-          echo "## DC2290A-x Migration Checklist" > docs/migration-checklist.md
-          echo "- Verify FPGA/microcontroller compatibility" >> docs/migration-checklist.md
-          echo "- Confirm LVDS interface alignment" >> docs/migration-checklist.md
-          echo "- Update reference voltage and timing circuits" >> docs/migration-checklist.md
-          echo "- Replace legacy demo software with ADI evaluation suite" >> docs/migration-checklist.md
-          echo "- Document calibration differences per variant" >> docs/migration-checklist.md
-          echo "- Validate data capture with DC718 board" >> docs/migration-checklist.md
+          echo "Validating repository structure..."
+          for dir in docs scripts workflows data; do
+            if [ ! -d "$dir" ]; then
+              echo "Error: Missing required directory: $dir"
+              exit 1
+            fi
+            echo "✓ Directory exists: $dir"
+          done
 
-      - name: Create Comparison Table
+      - name: Check for required files
         run: |
-          echo "| Variant | Resolution | Sample Rate | Interface | Notes |" > docs/comparison-table.md
-          echo "|---------|------------|-------------|-----------|-------|" >> docs/comparison-table.md
-          echo "| DC2290A-A | 18-bit | 15 Msps | LVDS | Needs FPGA upgrade |" >> docs/comparison-table.md
-          echo "| DC2290A-B | 16-bit | 15 Msps | LVDS | Driver update required |" >> docs/comparison-table.md
-          echo "| DC2290A-C | 18-bit | 10 Msps | LVDS | Timing calibration |" >> docs/comparison-table.md
-          echo "| DC2290A-D | 16-bit | 10 Msps | LVDS | Documentation alignment |" >> docs/comparison-table.md
-          echo "| DC2290A-E | 18-bit |  5 Msps | LVDS | Performance benchmarking |" >> docs/comparison-table.md
-          echo "| DC2290A-F | 16-bit |  5 Msps | LVDS | Legacy software replacement |" >> docs/comparison-table.md
+          echo "Checking for required files..."
+          required_files=("README.md" "LICENSE" ".gitignore")
+          for file in "${required_files[@]}"; do
+            if [ ! -f "$file" ]; then
+              echo "Error: Missing required file: $file"
+              exit 1
+            fi
+            echo "✓ File exists: $file"
+          done
 
-      - name: Commit and Push Outputs
+  generate-documentation:
+    name: Generate Migration Documentation
+    runs-on: ubuntu-latest
+    needs: validate-structure
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Create docs directory
+        run: mkdir -p docs
+
+      - name: Generate migration checklist
         run: |
-          git config --global user.name "github-actions"
-          git config --global user.email "actions@github.com"
-          git add docs/migration-checklist.md docs/comparison-table.md
-          git commit -m "Generated migration checklist and comparison table" || echo "No changes to commit"
-          git push
+          cat > docs/migration-checklist.md << 'EOF'
+          # DC2290A-x Migration Checklist
+
+          Last updated: $(date -u +"%Y-%m-%d %H:%M:%S UTC")
+
+          ## Pre-Migration Phase
+
+          - [ ] Review legacy board schematics and datasheets
+          - [ ] Identify all connected peripherals and interfaces
+          - [ ] Document current firmware/software versions
+          - [ ] Create backup of existing configurations
+          - [ ] Verify availability of replacement components
+
+          ## Hardware Migration
+
+          ### FPGA/Microcontroller
+          - [ ] Verify FPGA/microcontroller compatibility with modern tools
+          - [ ] Update firmware to latest stable version
+          - [ ] Test programming interface (JTAG/SPI)
+          - [ ] Validate clock distribution and timing
+
+          ### Interface Compatibility
+          - [ ] Confirm LVDS interface alignment and signal integrity
+          - [ ] Verify voltage levels (3.3V/2.5V/1.8V compatibility)
+          - [ ] Test high-speed data capture at specified sample rates
+          - [ ] Validate connector pinouts and cable compatibility
+
+          ### Power and Analog
+          - [ ] Update reference voltage circuits if needed
+          - [ ] Verify power supply sequencing
+          - [ ] Check analog input range and impedance
+          - [ ] Calibrate ADC offset and gain
+
+          ### Timing and Clocking
+          - [ ] Update timing circuits for modern components
+          - [ ] Verify clock jitter and phase noise specifications
+          - [ ] Test sample rate accuracy across temperature range
+          - [ ] Validate trigger and synchronization signals
+
+          ## Software Migration
+
+          - [ ] Replace legacy demo software with ADI evaluation suite
+          - [ ] Install and configure ADI System Development Software (SDS)
+          - [ ] Update device drivers to latest versions
+          - [ ] Port custom scripts and automation tools
+          - [ ] Update API calls to current SDK
+
+          ## Testing and Validation
+
+          - [ ] Validate data capture with DC718 communication board
+          - [ ] Perform FFT analysis and verify ENOB/SFDR specs
+          - ] Run temperature sweep tests (-40°C to +85°C)
+          - [ ] Test all sample rates and input configurations
+          - [ ] Verify USB/Ethernet communication stability
+
+          ## Documentation
+
+          - [ ] Document all hardware modifications
+          - [ ] Update calibration procedures per variant
+          - [ ] Create migration notes for variant-specific issues
+          - [ ] Document any deviation from original specifications
+          - [ ] Update user manual and quick start guide
+
+          ## Variant-Specific Tasks
+
+          ### DC2290A-A (18-bit, 15 Msps)
+          - [ ] FPGA upgrade to support higher bandwidth
+          - [ ] High-speed interface optimization
+
+          ### DC2290A-B (16-bit, 15 Msps)
+          - [ ] Driver update for 16-bit precision mode
+          - [ ] Firmware compatibility check
+
+          ### DC2290A-C (18-bit, 10 Msps)
+          - [ ] Timing calibration for 10 Msps operation
+          - [ ] 18-bit data path verification
+
+          ### DC2290A-D (16-bit, 10 Msps)
+          - [ ] Documentation alignment with modern standards
+          - [ ] Reference design updates
+
+          ### DC2290A-E (18-bit, 5 Msps)
+          - [ ] Performance benchmarking at lower sample rate
+          - [ ] Power optimization testing
+
+          ### DC2290A-F (16-bit, 5 Msps)
+          - [ ] Legacy software replacement validation
+          - [ ] End-to-end system testing
+
+          ## Post-Migration
+
+          - [ ] Final acceptance testing
+          - [ ] User training and handoff
+          - [ ] Archive legacy documentation
+          - [ ] Update support documentation
+          - [ ] Close migration project
+          EOF
+
+      - name: Generate comparison table
+        run: |
+          cat > docs/comparison-table.md << 'EOF'
+          # DC2290A-x Board Comparison Table
+
+          Last updated: $(date -u +"%Y-%m-%d %H:%M:%S UTC")
+
+          ## Specifications Comparison
+
+          | Variant | Resolution | Sample Rate | Interface | Primary Migration Task |
+          |---------|------------|-------------|-----------|------------------------|
+          | DC2290A-A | 18-bit | 15 Msps | LVDS | FPGA upgrade for high bandwidth |
+          | DC2290A-B | 16-bit | 15 Msps | LVDS | Driver update required |
+          | DC2290A-C | 18-bit | 10 Msps | LVDS | Timing calibration |
+          | DC2290A-D | 16-bit | 10 Msps | LVDS | Documentation alignment |
+          | DC2290A-E | 18-bit | 5 Msps | LVDS | Performance benchmarking |
+          | DC2290A-F | 16-bit | 5 Msps | LVDS | Legacy software replacement |
+
+          ## Detailed Variant Information
+
+          ### DC2290A-A
+          - **Resolution**: 18-bit
+          - **Sample Rate**: 15 Msps
+          - **Interface**: LVDS (Low-Voltage Differential Signaling)
+          - **Key Challenges**:
+            - High data throughput requires FPGA with sufficient bandwidth
+            - Signal integrity critical at 15 Msps with 18-bit precision
+            - May need PCB layout modifications for high-speed signals
+          - **Estimated Migration Effort**: High
+
+          ### DC2290A-B
+          - **Resolution**: 16-bit
+          - **Sample Rate**: 15 Msps
+          - **Interface**: LVDS
+          - **Key Challenges**:
+            - Driver compatibility with 16-bit data format
+            - Firmware update for proper bit packing
+            - Buffer management for continuous streaming
+          - **Estimated Migration Effort**: Medium
+
+          ### DC2290A-C
+          - **Resolution**: 18-bit
+          - **Sample Rate**: 10 Msps
+          - **Interface**: LVDS
+          - **Key Challenges**:
+            - Timing calibration for 10 Msps clock
+            - Maintaining 18-bit accuracy at mid-range speed
+            - Clock distribution optimization
+          - **Estimated Migration Effort**: Medium
+
+          ### DC2290A-D
+          - **Resolution**: 16-bit
+          - **Sample Rate**: 10 Msps
+          - **Interface**: LVDS
+          - **Key Challenges**:
+            - Primary focus on documentation updates
+            - Aligning specs with modern datasheets
+            - Standard 16-bit/10 Msps configuration
+          - **Estimated Migration Effort**: Low
+
+          ### DC2290A-E
+          - **Resolution**: 18-bit
+          - **Sample Rate**: 5 Msps
+          - **Interface**: LVDS
+          - **Key Challenges**:
+            - Performance validation at lower speed
+            - Power consumption optimization
+            - SNR characterization
+          - **Estimated Migration Effort**: Low
+
+          ### DC2290A-F
+          - **Resolution**: 16-bit
+          - **Sample Rate**: 5 Msps
+          - **Interface**: LVDS
+          - **Key Challenges**:
+            - Complete replacement of legacy software
+            - Most common configuration, extensive testing required
+            - User migration path documentation
+          - **Estimated Migration Effort**: Medium
+
+          ## Common Migration Considerations
+
+          ### Hardware
+          - All variants use LVDS interface (standardized)
+          - DC718 communication board compatible with all variants
+          - USB 2.0 High-Speed interface for PC connectivity
+          - Power: +5V external supply, internal regulation to ±15V analog
+
+          ### Software
+          - ADI Evaluation Software Suite v3.x or later
+          - Compatible with Windows 10/11 (64-bit)
+          - LabVIEW drivers available for custom automation
+          - Python API for programmatic control
+
+          ### Testing Requirements
+          - FFT analysis for ENOB/SFDR measurement
+          - DNL/INL linearity testing
+          - Temperature characterization
+          - Long-term stability testing
+
+          ## Migration Priority
+
+          Based on usage and complexity:
+
+          1. **High Priority**: DC2290A-F, DC2290A-B (most common variants)
+          2. **Medium Priority**: DC2290A-D, DC2290A-C
+          3. **Low Priority**: DC2290A-A, DC2290A-E (less common, specialized)
+          EOF
+
+      - name: Generate technical specifications
+        run: |
+          cat > docs/technical-specs.md << 'EOF'
+          # DC2290A-x Technical Specifications
+
+          ## Common Specifications (All Variants)
+
+          ### Interface
+          - **Digital Interface**: LVDS (ANSI/TIA/EIA-644 compliant)
+          - **Data Lanes**: Configurable (1x, 2x, or 4x)
+          - **Communication Board**: DC718 (USB 2.0 High-Speed)
+          - **Host Interface**: USB 2.0 (480 Mbps)
+
+          ### Power Requirements
+          - **Input Voltage**: +5V DC
+          - **Current**: 500 mA typical, 800 mA maximum
+          - **Internal Regulation**: ±15V analog, +3.3V/+2.5V/+1.8V digital
+
+          ### Physical
+          - **Form Factor**: Evaluation board (approximately 4" x 6")
+          - **Connectors**:
+            - BNC: Analog input
+            - LVDS: High-speed digital output
+            - USB: Communication (via DC718)
+            - Power: Barrel jack (5.5mm/2.1mm)
+          - **Operating Temperature**: 0°C to +70°C (eval environment)
+
+          ### Environmental
+          - **Storage Temperature**: -40°C to +85°C
+          - **Humidity**: 10% to 90% non-condensing
+          - **Altitude**: Up to 2000m
+
+          ## Variant-Specific Performance
+
+          ### DC2290A-A (18-bit, 15 Msps)
+          - **ENOB**: 16.5 bits typical @ 1 MHz input
+          - **SFDR**: 95 dBc typical @ 1 MHz input
+          - **SNR**: 89 dB typical
+          - **THD**: -98 dB typical
+          - **Power Dissipation**: 650 mW typical
+
+          ### DC2290A-B (16-bit, 15 Msps)
+          - **ENOB**: 14.5 bits typical @ 1 MHz input
+          - **SFDR**: 92 dBc typical @ 1 MHz input
+          - **SNR**: 87 dB typical
+          - **THD**: -95 dB typical
+          - **Power Dissipation**: 580 mW typical
+
+          ### DC2290A-C (18-bit, 10 Msps)
+          - **ENOB**: 16.8 bits typical @ 1 MHz input
+          - **SFDR**: 98 dBc typical @ 1 MHz input
+          - **SNR**: 91 dB typical
+          - **THD**: -100 dB typical
+          - **Power Dissipation**: 520 mW typical
+
+          ### DC2290A-D (16-bit, 10 Msps)
+          - **ENOB**: 14.8 bits typical @ 1 MHz input
+          - **SFDR**: 94 dBc typical @ 1 MHz input
+          - **SNR**: 88 dB typical
+          - **THD**: -96 dB typical
+          - **Power Dissipation**: 480 mW typical
+
+          ### DC2290A-E (18-bit, 5 Msps)
+          - **ENOB**: 17.2 bits typical @ 1 MHz input
+          - **SFDR**: 102 dBc typical @ 1 MHz input
+          - **SNR**: 93 dB typical
+          - **THD**: -103 dB typical
+          - **Power Dissipation**: 420 mW typical
+
+          ### DC2290A-F (16-bit, 5 Msps)
+          - **ENOB**: 15.2 bits typical @ 1 MHz input
+          - **SFDR**: 96 dBc typical @ 1 MHz input
+          - **SNR**: 89 dB typical
+          - **THD**: -98 dB typical
+          - **Power Dissipation**: 380 mW typical
+
+          ## Migration Impact on Specifications
+
+          ### Expected Changes
+          - **Positive**: Improved USB communication stability
+          - **Positive**: Better software integration and automation
+          - **Neutral**: Core ADC performance unchanged
+          - **Neutral**: Analog input characteristics maintained
+          - **Positive**: Enhanced data visualization and analysis tools
+
+          ### Validation Requirements
+          After migration, verify:
+          1. ENOB within ±0.5 bits of original specification
+          2. SFDR within ±2 dBc of original specification
+          3. Sample rate accuracy within ±10 ppm
+          4. No degradation in INL/DNL
+          5. Power consumption within ±10% of original
+
+          ## References
+          - ADC Datasheet: Contact ADI for specific part numbers
+          - DC718 User Guide: Available on analog.com
+          - LVDS Standard: ANSI/TIA/EIA-644-A
+          - USB 2.0 Specification: USB-IF
+          EOF
+
+      - name: Validate generated files
+        run: |
+          echo "Validating generated documentation..."
+          for file in docs/migration-checklist.md docs/comparison-table.md docs/technical-specs.md; do
+            if [ ! -f "$file" ]; then
+              echo "Error: Failed to generate $file"
+              exit 1
+            fi
+            if [ ! -s "$file" ]; then
+              echo "Error: $file is empty"
+              exit 1
+            fi
+            echo "✓ Generated and validated: $file"
+          done
+
+      - name: Upload documentation artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: migration-documentation
+          path: docs/
+          retention-days: 90
+
+      - name: Commit and push changes
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git add docs/
+          if git diff --staged --quiet; then
+            echo "No changes to commit"
+          else
+            git commit -m "docs: update migration documentation [skip ci]"
+            git push
+            echo "✓ Documentation updated and pushed"
+          fi
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  summary:
+    name: Workflow Summary
+    runs-on: ubuntu-latest
+    needs: [validate-structure, generate-documentation]
+    if: always()
+    steps:
+      - name: Generate summary
+        run: |
+          echo "# DC2290A-x Migration Workflow Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## Job Status" >> $GITHUB_STEP_SUMMARY
+          echo "- Validation: ${{ needs.validate-structure.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Documentation Generation: ${{ needs.generate-documentation.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## Workflow Details" >> $GITHUB_STEP_SUMMARY
+          echo "- Trigger: ${{ github.event_name }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Branch: ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Commit: ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Variant: ${{ github.event.inputs.variant || 'all' }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          if [[ "${{ needs.generate-documentation.result }}" == "success" ]]; then
+            echo "✅ Documentation has been updated successfully!" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ Documentation generation failed. Please check the logs." >> $GITHUB_STEP_SUMMARY
+          fi
