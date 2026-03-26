@@ -4,7 +4,9 @@ Project roadmap for migrating DC2290A-x legacy boards to Zed Board with FMC inte
 
 ## Project Overview
 
-**Goal**: Design and validate a single FMC card for Zed Board that consolidates all 6 DC2290A legacy evaluation boards (DC2290A-A through DC2290A-F) into one unified design, following CN0577 reference design best practices.
+**Goal**: Migrate the DC2290A evaluation board from its legacy platform to a modern Zed Board FMC design. Like the original DC2290A, the new FMC board will support all 6 ADC variants (A through F) through component population, following CN0577 reference design best practices.
+
+**Note**: DC2290A is one board design with 6 SKUs (A/B/C/D/E/F) based on which LTC238x ADC is installed. The FMC migration maintains this same approach.
 
 **Timeline**: Q1 2026 - Q4 2026
 **Status**: Phase 1 (Planning & Design) - In Progress

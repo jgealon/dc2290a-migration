@@ -4,7 +4,7 @@ Hardware design files for the DC2290A-x migration FMC card compatible with Xilin
 
 ## Design Overview
 
-The FMC card replaces 6 legacy DC2290A evaluation boards with a single VITA 57.1 compliant FMC Low Pin Count (LPC) design. It supports all 6 DC2290A board variants (A through F) through component options, following the proven CN0577 reference design approach.
+The FMC card migrates the DC2290A evaluation board to a VITA 57.1 compliant FMC Low Pin Count (LPC) design for Zed Board. Like the legacy DC2290A, this is one board design that supports 6 variants (A through F) based on which ADC is populated. The design follows the proven CN0577 reference design approach.
 
 ### Key Features
 
@@ -112,10 +112,12 @@ Layer 6 (Bottom):    Signal - routing, test points
 
 ## Component Selection
 
-### DC2290A Board to ADC Mapping
+### DC2290A Variant to ADC Mapping
 
-| Legacy Board | ADC Part Number | Resolution | Sample Rate | Package | Pin Compatible |
-|--------------|-----------------|------------|-------------|---------|----------------|
+The DC2290A board variant designation (A/B/C/D/E/F) indicates which ADC is populated on the board. This applies to both the legacy DC2290A and the new FMC design.
+
+| Board Variant | Populated ADC | Resolution | Sample Rate | Package | Pin Compatible |
+|---------------|---------------|------------|-------------|---------|----------------|
 | **DC2290A-A** | LTC2387-18 | 18-bit | 15 Msps | 24-Lead QFN (4mm × 4mm) | Yes |
 | **DC2290A-B** | LTC2387-16 | 16-bit | 15 Msps | 24-Lead QFN (4mm × 4mm) | Yes |
 | **DC2290A-C** | LTC2386-18 | 18-bit | 10 Msps | 24-Lead QFN (4mm × 4mm) | Yes |
@@ -123,7 +125,7 @@ Layer 6 (Bottom):    Signal - routing, test points
 | **DC2290A-E** | LTC2385-18 | 18-bit | 5 Msps | 24-Lead QFN (4mm × 4mm) | Yes |
 | **DC2290A-F** | LTC2385-16 | 16-bit | 5 Msps | 24-Lead QFN (4mm × 4mm) | Yes |
 
-**Note**: All LTC238x ADCs are pin-compatible, enabling a single FMC PCB design to replace all 6 DC2290A boards through component substitution.
+**Note**: All LTC238x ADCs are pin-compatible. One PCB design supports all 6 variants through ADC substitution (same concept as original DC2290A board).
 
 ### Key Components
 

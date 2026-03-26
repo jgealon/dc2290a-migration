@@ -8,7 +8,8 @@ This repository documents the migration of **six legacy DC2290A evaluation board
 
 ### Migration Goals
 
-- **Consolidate 6 Boards**: Replace DC2290A-A/B/C/D/E/F with single FMC design
+- **Platform Migration**: Migrate DC2290A board design to Zed Board FMC
+- **Same Flexibility**: Like DC2290A, one design supports all 6 ADC variants
 - **Modern Platform**: Xilinx Zynq-7000 SoC (Zed Board)
 - **Standard Interface**: FMC (VITA 57.1) connector for portability
 - **Improved Performance**: Leverage FPGA processing vs. USB bottleneck
@@ -16,33 +17,42 @@ This repository documents the migration of **six legacy DC2290A evaluation board
 
 ## Project Background
 
-The DC2290A family consists of 6 legacy evaluation boards for high-speed ADC characterization. This project consolidates them into a modern, unified platform.
+The DC2290A is a legacy evaluation board for high-speed ADC characterization. The board comes in 6 variants (A through F) based on which ADC is populated. This project migrates the DC2290A board design to a modern Zed Board FMC platform.
 
-### Legacy Platform (DC2290A Boards)
-- **Boards**: DC2290A-A, DC2290A-B, DC2290A-C, DC2290A-D, DC2290A-E, DC2290A-F (6 separate boards)
-- **ADCs**: LTC2387/2386/2385 family (16/18-bit, 5/10/15 Msps)
+### Legacy Platform (DC2290A Board)
+- **Board Design**: DC2290A (one PCB design)
+- **Variants**: DC2290A-A/B/C/D/E/F (determined by which ADC is installed)
+  - DC2290A-**A** = board with **LTC2387-18** installed
+  - DC2290A-**B** = board with **LTC2387-16** installed
+  - DC2290A-**C** = board with **LTC2386-18** installed
+  - DC2290A-**D** = board with **LTC2386-16** installed
+  - DC2290A-**E** = board with **LTC2385-18** installed
+  - DC2290A-**F** = board with **LTC2385-16** installed
 - **Interface**: LVDS to DC718 USB adapter
-- **Limitations**: 6 different boards, USB bottleneck, limited FPGA processing
+- **Limitations**: Legacy platform, USB bottleneck, limited FPGA processing
 
 ### Target Platform (New FMC Design)
-- **Board**: Single FMC card for Zed Board supporting all 6 variants
+- **Board Design**: FMC card for Zed Board (one PCB design)
+- **Variants**: Same approach - variant determined by populated ADC
 - **SoC**: Xilinx Zynq-7000 (XC7Z020-CLG484)
 - **Interface**: FMC LPC (Low Pin Count) connector
 - **Design Reference**: CN0577 (proven ADC characterization design)
-- **Benefits**: One board, FPGA processing, better performance, easier inventory
+- **Benefits**: Modern platform, FPGA processing, better performance, FMC portability
 
 ## DC2290A Variant Support
 
-Each DC2290A board variant will be supported on the single FMC design through component options or configuration. All LTC238x ADCs share a common footprint and interface, using ADI's proven [AXI_LTC2387 IP core](https://analogdevicesinc.github.io/hdl/library/axi_ltc2387/index.html).
+The DC2290A board (both legacy and FMC versions) supports 6 ADC variants through component population. The board variant letter (A/B/C/D/E/F) indicates which ADC is installed. All LTC238x ADCs share a common footprint, and the FMC design uses ADI's proven [AXI_LTC2387 IP core](https://analogdevicesinc.github.io/hdl/library/axi_ltc2387/index.html).
 
-| Legacy Board | ADC Part Number | Resolution | Sample Rate | Interface | Power |
-|--------------|-----------------|------------|-------------|-----------|-------|
+| Board Variant | Installed ADC | Resolution | Sample Rate | Interface | Power |
+|---------------|---------------|------------|-------------|-----------|-------|
 | **DC2290A-A** | LTC2387-18 | 18-bit | 15 Msps | 6-lane LVDS | 170 mW |
 | **DC2290A-B** | LTC2387-16 | 16-bit | 15 Msps | 6-lane LVDS | 170 mW |
 | **DC2290A-C** | LTC2386-18 | 18-bit | 10 Msps | 6-lane LVDS | 140 mW |
 | **DC2290A-D** | LTC2386-16 | 16-bit | 10 Msps | 6-lane LVDS | 140 mW |
 | **DC2290A-E** | LTC2385-18 | 18-bit | 5 Msps | 6-lane LVDS | 115 mW |
 | **DC2290A-F** | LTC2385-16 | 16-bit | 5 Msps | 6-lane LVDS | 115 mW |
+
+**Note**: The variant letter designation works the same way on both legacy DC2290A and new FMC board - it's determined by which ADC part is populated during manufacturing.
 
 **Key Features** (All Variants):
 - Ultra-low noise: 89 dB SNR (typ)
@@ -187,12 +197,12 @@ This project is licensed under the Apache License 2.0 - see the [LICENSE](LICENS
 
 ## Key Design Decisions
 
-### Why Consolidate into Single FMC Board?
-- **Inventory**: One board SKU instead of 6 different DC2290A boards
-- **Pin Compatibility**: All LTC238x ADCs share same footprint
-- **Flexibility**: Software-configurable for any variant
-- **Cost**: Single PCB design and assembly process
-- **Maintenance**: One design to support and update
+### Why Migrate DC2290A to FMC?
+- **Platform Modernization**: Move from legacy platform to Zynq SoC
+- **Same Flexibility**: Like DC2290A, one board design supports all ADC variants
+- **Pin Compatibility**: All LTC238x ADCs share same footprint (same as legacy)
+- **Better Performance**: FPGA processing vs. USB-based approach
+- **FMC Standard**: Portable to other FMC carrier boards
 
 ### Why Zed Board Platform?
 - **Proven**: Widely used Zynq-7000 development board
@@ -212,13 +222,14 @@ This project is licensed under the Apache License 2.0 - see the [LICENSE](LICENS
 
 | Aspect | Legacy (DC2290A) | New (FMC/Zed) | Improvement |
 |--------|------------------|---------------|-------------|
-| **Platform** | 6 separate boards | 1 FMC card | -83% hardware SKUs |
+| **Board Design** | 1 PCB, 6 SKUs | 1 PCB, 6 SKUs | Same flexibility |
+| **Platform** | Legacy + DC718 | Zynq SoC | Modern platform |
 | **Interface** | USB 2.0 (480 Mbps) | AXI DMA (>1 Gbps) | >2x bandwidth |
 | **Processing** | PC-based | FPGA + ARM | Real-time capable |
 | **Latency** | ~10 ms (USB) | <1 µs (FPGA) | 10,000x faster |
 | **Integration** | Standalone | Embedded system | Full control |
 | **Expandability** | Limited | FPGA fabric | Unlimited |
-| **Software** | Proprietary | Open source | Community support |
+| **Portability** | DC718 only | Any FMC carrier | FMC standard |
 
 ## Support
 

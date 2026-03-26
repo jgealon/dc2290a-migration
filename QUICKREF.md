@@ -2,10 +2,13 @@
 
 Quick reference card for the DC2290A-x board migration to Zed Board project.
 
-## DC2290A Board Variants (Legacy → FMC)
+## DC2290A Board Variants
 
-| Legacy Board | Part Number | Resolution | Rate | SNR | SFDR | Power |
-|--------------|-------------|------------|------|-----|------|-------|
+The variant letter (A/B/C/D/E/F) indicates which ADC is installed on the board.
+Applies to both legacy DC2290A and new FMC design.
+
+| Board Variant | Installed ADC | Resolution | Rate | SNR | SFDR | Power |
+|---------------|---------------|------------|------|-----|------|-------|
 | **DC2290A-A** | LTC2387-18 | 18-bit | 15 Msps | 91.5 dB | 108 dB | 170 mW |
 | **DC2290A-B** | LTC2387-16 | 16-bit | 15 Msps | 91.5 dB | 108 dB | 170 mW |
 | **DC2290A-C** | LTC2386-18 | 18-bit | 10 Msps | 91.5 dB | 108 dB | 140 mW |
