@@ -1,10 +1,10 @@
-# CN0577 FMC Migration Roadmap
+# DC2290A-x Migration Roadmap
 
-Project roadmap for migrating CN0577 reference design to Zed Board with FMC interface.
+Project roadmap for migrating DC2290A-x legacy boards to Zed Board with FMC interface.
 
 ## Project Overview
 
-**Goal**: Design and validate a single FMC card for Zed Board that supports all 6 ADC variants from the CN0577 reference design, replacing the legacy DC2290A evaluation boards.
+**Goal**: Design and validate a single FMC card for Zed Board that consolidates all 6 DC2290A legacy evaluation boards (DC2290A-A through DC2290A-F) into one unified design, following CN0577 reference design best practices.
 
 **Timeline**: Q1 2026 - Q4 2026
 **Status**: Phase 1 (Planning & Design) - In Progress

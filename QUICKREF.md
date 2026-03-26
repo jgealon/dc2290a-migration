@@ -1,17 +1,17 @@
-# CN0577 FMC Quick Reference
+# DC2290A-x FMC Quick Reference
 
-Quick reference card for the CN0577 FMC migration project.
+Quick reference card for the DC2290A-x board migration to Zed Board project.
 
-## ADC Variants
+## DC2290A Board Variants (Legacy → FMC)
 
-| Config | Part Number | Resolution | Rate | SNR | SFDR | Power |
-|--------|-------------|------------|------|-----|------|-------|
-| **A** | LTC2387-18 | 18-bit | 15 Msps | 91.5 dB | 108 dB | 170 mW |
-| **B** | LTC2387-16 | 16-bit | 15 Msps | 91.5 dB | 108 dB | 170 mW |
-| **C** | LTC2386-18 | 18-bit | 10 Msps | 91.5 dB | 108 dB | 140 mW |
-| **D** | LTC2386-16 | 16-bit | 10 Msps | 91.5 dB | 108 dB | 140 mW |
-| **E** | LTC2385-18 | 18-bit | 5 Msps | 91.5 dB | 108 dB | 115 mW |
-| **F** | LTC2385-16 | 16-bit | 5 Msps | 91.5 dB | 108 dB | 115 mW |
+| Legacy Board | Part Number | Resolution | Rate | SNR | SFDR | Power |
+|--------------|-------------|------------|------|-----|------|-------|
+| **DC2290A-A** | LTC2387-18 | 18-bit | 15 Msps | 91.5 dB | 108 dB | 170 mW |
+| **DC2290A-B** | LTC2387-16 | 16-bit | 15 Msps | 91.5 dB | 108 dB | 170 mW |
+| **DC2290A-C** | LTC2386-18 | 18-bit | 10 Msps | 91.5 dB | 108 dB | 140 mW |
+| **DC2290A-D** | LTC2386-16 | 16-bit | 10 Msps | 91.5 dB | 108 dB | 140 mW |
+| **DC2290A-E** | LTC2385-18 | 18-bit | 5 Msps | 91.5 dB | 108 dB | 115 mW |
+| **DC2290A-F** | LTC2385-16 | 16-bit | 5 Msps | 91.5 dB | 108 dB | 115 mW |
 
 ## Pin Summary (FMC LPC)
 
@@ -86,10 +86,11 @@ Formula: `PERIOD = (AXI_CLK / SAMPLE_RATE) - 1`
 
 ### Device Tree
 ```dts
-ltc2387_adc: axi-ltc2387@44a00000 {
+dc2290a_adc: axi-ltc2387@44a00000 {
     compatible = "adi,axi-ltc2387-1.0";
     reg = <0x44a00000 0x10000>;
-    adi,adc-variant = "ltc2387-18";
+    adi,board-variant = "dc2290a-a";  /* Specify which DC2290A board */
+    adi,adc-part = "ltc2387-18";      /* ADC on that board */
 };
 ```
 
@@ -113,13 +114,13 @@ cat /dev/iio:device0 > capture.bin
 
 ### Python API
 ```python
-from cn0577_fmc import CN0577
+from dc2290a_fmc import DC2290A
 
-# Initialize
-adc = CN0577(uri='local:')  # Or 'ip:192.168.1.100'
+# Initialize (replaces physical DC2290A board)
+adc = DC2290A(uri='local:')  # Or 'ip:192.168.1.100'
 
-# Configure variant
-adc.set_variant('config-a')  # LTC2387-18
+# Configure variant (which DC2290A board to emulate)
+adc.set_variant('dc2290a-a')  # LTC2387-18, 15 Msps
 adc.sample_rate = 15e6
 
 # Capture
@@ -215,7 +216,8 @@ cat /proc/interrupts | grep dma
 ## Important Links
 
 ### Documentation
-- [CN0577 Reference Design](https://www.analog.com/CN0577)
+- [DC2290A Legacy Boards](https://www.analog.com) - Original evaluation boards
+- [CN0577 Reference Design](https://www.analog.com/CN0577) - Design inspiration
 - [LTC2387 Datasheet](https://www.analog.com/ltc2387)
 - [ADI HDL Library](https://github.com/analogdevicesinc/hdl)
 - [AXI_LTC2387 Docs](https://analogdevicesinc.github.io/hdl/library/axi_ltc2387/)
@@ -242,4 +244,5 @@ cat /proc/interrupts | grep dma
 
 **Last Updated**: 2026-03-26
 **Repository**: dc2290a-migration
-**Project**: CN0577 FMC Migration to Zed Board
+**Project**: DC2290A-x Board Migration to Zed Board (FMC)
+**Design Reference**: CN0577 Circuits from the Lab

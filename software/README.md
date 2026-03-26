@@ -1,10 +1,10 @@
-# CN0577 FMC Software
+# DC2290A-x FMC Software
 
-Software stack for the CN0577 FMC card on Zed Board, including Linux drivers, Python API, and example applications.
+Software stack for the DC2290A-x migration FMC card on Zed Board, including Linux drivers, Python API, and example applications. This replaces the legacy DC2290A board software with a modern, unified interface.
 
 ## Overview
 
-The software provides a complete stack from kernel drivers to high-level Python APIs for controlling the CN0577 ADC system and acquiring data.
+The software provides a complete stack from kernel drivers to high-level Python APIs for controlling the DC2290A-x FMC board and acquiring data. This unified software interface replaces the separate software packages that were required for each of the 6 legacy DC2290A boards.
 
 ### Software Architecture
 

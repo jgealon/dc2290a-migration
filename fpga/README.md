@@ -1,10 +1,10 @@
-# CN0577 FMC FPGA Design
+# DC2290A-x FMC FPGA Design
 
-FPGA design for the CN0577 FMC card on Xilinx Zed Board (Zynq-7000 SoC), using ADI's **AXI_LTC2387** IP core.
+FPGA design for the DC2290A-x migration FMC card on Xilinx Zed Board (Zynq-7000 SoC), using ADI's **AXI_LTC2387** IP core.
 
 ## Overview
 
-The FPGA design leverages Analog Devices' proven [AXI_LTC2387 IP core](https://analogdevicesinc.github.io/hdl/library/axi_ltc2387/) to interface with LTC2387/2386/2385 high-speed SAR ADCs. The IP handles LVDS deserialization, data formatting, and AXI-Stream output. All 6 ADC variants (LTC2387/2386/2385 in 16-bit and 18-bit) are supported through configuration.
+The FPGA design consolidates 6 legacy DC2290A boards into a single programmable platform. It leverages Analog Devices' proven [AXI_LTC2387 IP core](https://analogdevicesinc.github.io/hdl/library/axi_ltc2387/) (same IP used in CN0577) to interface with LTC2387/2386/2385 high-speed SAR ADCs. All 6 DC2290A board variants are supported through configuration.
 
 **Key Benefits of Using ADI HDL IP**:
 - ✅ Proven, production-tested design

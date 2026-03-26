@@ -1,6 +1,6 @@
 # AXI_LTC2387 IP Core Integration Guide
 
-Guide for integrating ADI's AXI_LTC2387 IP core into the CN0577 FMC design on Zed Board.
+Guide for integrating ADI's AXI_LTC2387 IP core into the DC2290A-x migration FMC design on Zed Board. This IP core is the same one used in the CN0577 reference design.
 
 ## Overview
 

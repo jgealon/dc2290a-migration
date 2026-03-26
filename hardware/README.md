@@ -1,10 +1,10 @@
-# CN0577 FMC Card Hardware Design
+# DC2290A-x FMC Card Hardware Design
 
-Hardware design files for the CN0577 FMC card compatible with Xilinx Zed Board.
+Hardware design files for the DC2290A-x migration FMC card compatible with Xilinx Zed Board. This design consolidates 6 legacy DC2290A boards into a single FMC card, following CN0577 reference design patterns.
 
 ## Design Overview
 
-The FMC card implements a precision data acquisition system on a VITA 57.1 compliant FMC Low Pin Count (LPC) form factor. The design supports 6 ADC variants through component options or configuration.
+The FMC card replaces 6 legacy DC2290A evaluation boards with a single VITA 57.1 compliant FMC Low Pin Count (LPC) design. It supports all 6 DC2290A board variants (A through F) through component options, following the proven CN0577 reference design approach.
 
 ### Key Features
 
@@ -112,18 +112,18 @@ Layer 6 (Bottom):    Signal - routing, test points
 
 ## Component Selection
 
-### ADC Variants
+### DC2290A Board to ADC Mapping
 
-| Config | ADC Part Number | Resolution | Sample Rate | Package | Pin Compatible |
-|--------|-----------------|------------|-------------|---------|----------------|
-| A | **LTC2387-18** | 18-bit | 15 Msps | 24-Lead QFN (4mm × 4mm) | Yes |
-| B | **LTC2387-16** | 16-bit | 15 Msps | 24-Lead QFN (4mm × 4mm) | Yes |
-| C | **LTC2386-18** | 18-bit | 10 Msps | 24-Lead QFN (4mm × 4mm) | Yes |
-| D | **LTC2386-16** | 16-bit | 10 Msps | 24-Lead QFN (4mm × 4mm) | Yes |
-| E | **LTC2385-18** | 18-bit | 5 Msps | 24-Lead QFN (4mm × 4mm) | Yes |
-| F | **LTC2385-16** | 16-bit | 5 Msps | 24-Lead QFN (4mm × 4mm) | Yes |
+| Legacy Board | ADC Part Number | Resolution | Sample Rate | Package | Pin Compatible |
+|--------------|-----------------|------------|-------------|---------|----------------|
+| **DC2290A-A** | LTC2387-18 | 18-bit | 15 Msps | 24-Lead QFN (4mm × 4mm) | Yes |
+| **DC2290A-B** | LTC2387-16 | 16-bit | 15 Msps | 24-Lead QFN (4mm × 4mm) | Yes |
+| **DC2290A-C** | LTC2386-18 | 18-bit | 10 Msps | 24-Lead QFN (4mm × 4mm) | Yes |
+| **DC2290A-D** | LTC2386-16 | 16-bit | 10 Msps | 24-Lead QFN (4mm × 4mm) | Yes |
+| **DC2290A-E** | LTC2385-18 | 18-bit | 5 Msps | 24-Lead QFN (4mm × 4mm) | Yes |
+| **DC2290A-F** | LTC2385-16 | 16-bit | 5 Msps | 24-Lead QFN (4mm × 4mm) | Yes |
 
-**Note**: All LTC238x variants are pin-compatible, allowing a single PCB design to support all 6 configurations through component substitution.
+**Note**: All LTC238x ADCs are pin-compatible, enabling a single FMC PCB design to replace all 6 DC2290A boards through component substitution.
 
 ### Key Components
 
