@@ -279,7 +279,7 @@ Project roadmap for migrating DC2290A-x legacy boards to Zed Board with FMC inte
 - [ ] All 6 ADC variants working on single FMC card
 - [ ] Performance matches or exceeds legacy DC2290A boards
 - [ ] FPGA timing closure with >10% margin
-- [ ] Software stack fully functional on PetaLinux
+- [ ] Software stack fully functional on ADI Kuiper Linux
 - [ ] Complete documentation package
 
 ### Performance Targets

@@ -9,7 +9,7 @@ Quick start guide for setting up and using the CN0577 FMC card with Zed Board.
 - **Zed Board** (Xilinx Zynq-7000 development board)
 - **CN0577 FMC Card** (with desired ADC variant populated)
 - **12V Power Supply** (2A minimum) for Zed Board
-- **microSD Card** (8GB minimum) with PetaLinux image
+- **microSD Card** (8GB minimum) with ADI Kuiper Linux image
 - **USB Cable** (Type-A to Micro-B) for UART console
 - **Ethernet Cable** (for network connectivity)
 - **Signal Generator** (for ADC input stimulus)
@@ -18,7 +18,7 @@ Quick start guide for setting up and using the CN0577 FMC card with Zed Board.
 ### Software Required
 
 - **Vivado** 2022.2 or later (for FPGA programming)
-- **PetaLinux Tools** (for Linux build)
+- **ADI Kuiper Linux** (ADI's Linux distribution for evaluation boards)
 - **Python** 3.8 or later
 - **LibIIO** library
 - **Terminal emulator** (PuTTY, Tera Term, or screen)
@@ -46,7 +46,7 @@ Quick start guide for setting up and using the CN0577 FMC card with Zed Board.
      - JP11: 2-3 (GND)
 
 3. **Insert microSD Card**
-   - Download pre-built PetaLinux image from releases page
+   - Download pre-built ADI Kuiper Linux image from releases page
    - Write image to microSD card (use Win32DiskImager or dd)
    - Insert card into Zed Board SD slot (J12)
 
@@ -135,14 +135,14 @@ Quick start guide for setting up and using the CN0577 FMC card with Zed Board.
    ...
    [OK] Started Analog Devices IIO Daemon
    ...
-   PetaLinux 2022.2 zedboard /dev/ttyPS0
+   Analog Devices Kuiper Linux zedboard /dev/ttyPS0
 
    zedboard login:
    ```
 
 4. **Login**
-   - Username: `root`
-   - Password: `root` (or as configured)
+   - Username: `analog` (or `root`)
+   - Password: `analog` (or as configured)
 
 ### Step 2: Verify System
 

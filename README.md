@@ -77,7 +77,7 @@ The DC2290A board (both legacy and FMC versions) supports 6 ADC variants through
 - **FPGA Fabric**: High-speed LVDS interface and data capture
 - **AXI Interfaces**: AXI-Lite control, AXI-Stream data output
 - **DMA Engine**: Efficient data transfer to DDR memory via AXI DMAC
-- **Linux Support**: PetaLinux with IIO framework drivers
+- **Linux Support**: ADI Kuiper Linux with IIO framework drivers
 
 ### Software Stack
 - **IIO Drivers**: Linux Industrial I/O framework
@@ -97,7 +97,7 @@ The DC2290A board (both legacy and FMC versions) supports 6 ADC variants through
 
 2. **Configure Boot Mode**
    - Set Zed Board boot mode to SD card
-   - Insert SD card with PetaLinux image
+   - Insert SD card with ADI Kuiper Linux image
 
 3. **Connect Interfaces**
    - USB-UART for console access
@@ -209,7 +209,7 @@ This project is licensed under the Apache License 2.0 - see the [LICENSE](LICENS
 - **FMC Support**: Standard FMC LPC connector
 - **CN0577 Reference**: Follows proven evaluation board approach
 - **Community**: Large user base and resources
-- **Linux Support**: Mature PetaLinux BSP
+- **Linux Support**: ADI Kuiper Linux distribution
 
 ### Why Follow CN0577 Design?
 - **Proven Design**: CN0577 is a validated ADC characterization platform

@@ -64,11 +64,10 @@ RemoteSystemsTempFiles/
 workspace/
 .analytics/
 
-# PetaLinux
-fpga/petalinux/build/
-fpga/petalinux/images/
-fpga/petalinux/components/
-fpga/petalinux/.petalinux/
+# ADI Kuiper Linux
+fpga/kuiper/build/
+fpga/kuiper/images/
+fpga/kuiper/components/
 *.bb-
 *.bbappend-
 *.swu

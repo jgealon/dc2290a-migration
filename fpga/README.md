@@ -99,8 +99,8 @@ fpga/
 │   ├── fsbl/                   # First Stage Boot Loader
 │   ├── devicetree/             # Device tree sources
 │   └── examples/               # Bare-metal examples
-├── petalinux/
-│   ├── project-spec/           # PetaLinux configuration
+├── kuiper/
+│   ├── project-spec/           # Kuiper Linux configuration
 │   ├── recipes/                # Custom recipes
 │   └── build/                  # Build outputs (gitignored)
 └── README.md                   # This file
@@ -301,7 +301,7 @@ Integrates all modules and connects to Zynq PS.
 - **Xilinx Vivado** 2022.2 or later (2023.1+ recommended)
 - **ADI HDL Repository**: Clone from [GitHub](https://github.com/analogdevicesinc/hdl)
 - **Xilinx SDK/Vitis** (for software)
-- **PetaLinux Tools** 2022.2+ (for Linux build)
+- **ADI Kuiper Linux** (ADI's Linux distribution, based on Raspberry Pi OS)
 - **Zed Board files**: Included with Vivado
 
 ### Step 0: Get ADI HDL Library
@@ -481,7 +481,7 @@ set_input_delay -clock adc_clk -min 0.5 [get_ports adc_data_p]
 set_false_path -from [get_clocks adc_clk] -to [get_clocks axi_clk]
 ```
 
-## PetaLinux Integration
+## ADI Kuiper Linux Integration
 
 ### Device Tree
 
