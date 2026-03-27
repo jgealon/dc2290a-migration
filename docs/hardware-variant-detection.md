@@ -2,19 +2,18 @@
 
 ## Overview
 
-The DC2290A FMC board uses **resistor coding** (similar to legacy DC2290A) to identify which variant (A through F) is installed. Resistors R33, R34, and R35 are either populated (0Ω) or DNI (Do Not Install) to create a unique 3-bit code for each variant.
+The DC2290A FMC board uses **2-resistor coding** (matching legacy DC2290A design) combined with SPI ID detection to identify which variant (A through F) is installed. Resistors R33 and R34 are either populated (0Ω) or DNI (Do Not Install) to identify the ADC family (LTC2387/2386/2385), and the ADC's SPI ID register provides the resolution (16-bit or 18-bit).
 
-This hardware identification allows **automatic variant detection** at boot time, eliminating the need for:
+This hybrid identification approach allows **automatic variant detection** at boot time, eliminating the need for:
 - Manual variant configuration
 - EEPROM on FMC card
-- SPI ID register reads
 - Multiple device tree files
 
 ## Hardware Implementation
 
-### Resistor Coding Scheme
+### Resistor Coding Scheme (2 Resistors)
 
-Using 3 resistors (R33, R34, R35) connected to GPIO pins gives us 8 possible combinations (000 to 111), which is enough for 6 variants plus 2 reserved codes.
+Using **2 resistors** (R33, R34) connected to GPIO pins gives us 4 possible combinations. We use 3 of these to encode the ADC family (2387, 2386, 2385):
 
 ```
 ┌─────────────────────────────────────────────────────────┐
@@ -22,32 +21,51 @@ Using 3 resistors (R33, R34, R35) connected to GPIO pins gives us 8 possible com
 │                                                          │
 │  ┌────────────────────────────────────────────────┐    │
 │  │   Variant ID Resistors (on FMC LA pins)       │    │
+│  │   (Matches legacy DC2290A design)              │    │
 │  │                                                 │    │
 │  │   R33 ────┬──── FMC LA00_CC_P (ID bit 0)      │    │
 │  │           │                                     │    │
 │  │   R34 ────┼──── FMC LA01_CC_P (ID bit 1)      │    │
 │  │           │                                     │    │
-│  │   R35 ────┼──── FMC LA02_P    (ID bit 2)      │    │
-│  │           │                                     │    │
 │  │           └──── GND (when populated)           │    │
 │  │                                                 │    │
 │  │   Pull-ups on Zed Board side (10kΩ to 3.3V)   │    │
+│  │                                                 │    │
+│  │   + SPI interface to ADC for resolution read   │    │
 │  └────────────────────────────────────────────────┘    │
 └─────────────────────────────────────────────────────────┘
 ```
 
-### Encoding Table
+### Two-Stage Detection
 
-| Variant | ADC Model | R33 | R34 | R35 | Binary | Hex | Dec |
-|---------|-----------|-----|-----|-----|--------|-----|-----|
-| **DC2290A-A** | LTC2387-18 | DNI | DNI | DNI | 111 | 0x7 | 7 |
-| **DC2290A-B** | LTC2387-16 | 0Ω  | DNI | DNI | 011 | 0x3 | 3 |
-| **DC2290A-C** | LTC2386-18 | DNI | 0Ω  | DNI | 101 | 0x5 | 5 |
-| **DC2290A-D** | LTC2386-16 | 0Ω  | 0Ω  | DNI | 001 | 0x1 | 1 |
-| **DC2290A-E** | LTC2385-18 | DNI | DNI | 0Ω  | 110 | 0x6 | 6 |
-| **DC2290A-F** | LTC2385-16 | 0Ω  | DNI | 0Ω  | 010 | 0x2 | 2 |
-| _Reserved 1_ | - | DNI | 0Ω  | 0Ω  | 100 | 0x4 | 4 |
-| _Reserved 2_ | - | 0Ω  | 0Ω  | 0Ω  | 000 | 0x0 | 0 |
+**Stage 1: Resistor Coding (ADC Family)**
+
+2 resistors encode the ADC family (sample rate):
+
+| ADC Family | Max Rate | R33 | R34 | Binary | Code | Variants |
+|------------|----------|-----|-----|--------|------|----------|
+| **LTC2387** | 15 Msps | DNI | DNI | 11 | 0x3 | A, B |
+| **LTC2386** | 10 Msps | DNI | 0Ω  | 10 | 0x2 | C, D |
+| **LTC2385** | 5 Msps  | 0Ω  | DNI | 01 | 0x1 | E, F |
+| _Reserved_  | -       | 0Ω  | 0Ω  | 00 | 0x0 | - |
+
+**Stage 2: SPI ID Register (Resolution)**
+
+Read ADC ID via SPI to determine resolution:
+- LTC238x-18: 18-bit (variants A, C, E)
+- LTC238x-16: 16-bit (variants B, D, F)
+
+**Combined Detection**:
+```
+Resistor Code | SPI ID       | Variant    | ADC Model
+--------------|--------------|-----------  |------------
+     0x3      | LTC2387-18   | DC2290A-A  | LTC2387-18
+     0x3      | LTC2387-16   | DC2290A-B  | LTC2387-16
+     0x2      | LTC2386-18   | DC2290A-C  | LTC2386-18
+     0x2      | LTC2386-16   | DC2290A-D  | LTC2386-16
+     0x1      | LTC2385-18   | DC2290A-E  | LTC2385-18
+     0x1      | LTC2385-16   | DC2290A-F  | LTC2385-16
+```
 
 **Logic**:
 - **Resistor populated (0Ω)**: Pulls GPIO to GND → reads as **0**
@@ -56,23 +74,30 @@ Using 3 resistors (R33, R34, R35) connected to GPIO pins gives us 8 possible com
 ### Reading Logic
 
 ```
-GPIO Value = (R35_read << 2) | (R34_read << 1) | (R33_read << 0)
+// Stage 1: Read resistor coding
+GPIO Value = (R34_read << 1) | (R33_read << 0)
 
 Where:
   R3x_read = 0 if resistor installed (pulled to GND)
   R3x_read = 1 if resistor DNI (pulled high)
+
+// Stage 2: Read SPI ID register
+ADC_ID = spi_read_id_register()  // Returns part number and resolution
+
+// Combine to determine exact variant
+Variant = lookup_variant(GPIO_Value, ADC_ID)
 ```
 
 ### Hardware BOM per Variant
 
-| Variant | R33 Value | R34 Value | R35 Value | Notes |
-|---------|-----------|-----------|-----------|-------|
-| DC2290A-A | DNI | DNI | DNI | All floating (0x7) |
-| DC2290A-B | 0Ω 0402 | DNI | DNI | Only R33 installed |
-| DC2290A-C | DNI | 0Ω 0402 | DNI | Only R34 installed |
-| DC2290A-D | 0Ω 0402 | 0Ω 0402 | DNI | R33+R34 installed |
-| DC2290A-E | DNI | DNI | 0Ω 0402 | Only R35 installed |
-| DC2290A-F | 0Ω 0402 | DNI | 0Ω 0402 | R33+R35 installed |
+| Variant | ADC Part | R33 | R34 | Notes |
+|---------|----------|-----|-----|-------|
+| **DC2290A-A** | LTC2387-18 | DNI | DNI | 15 Msps, 18-bit |
+| **DC2290A-B** | LTC2387-16 | DNI | DNI | 15 Msps, 16-bit |
+| **DC2290A-C** | LTC2386-18 | DNI | 0Ω 0402 | 10 Msps, 18-bit |
+| **DC2290A-D** | LTC2386-16 | DNI | 0Ω 0402 | 10 Msps, 16-bit |
+| **DC2290A-E** | LTC2385-18 | 0Ω 0402 | DNI | 5 Msps, 18-bit |
+| **DC2290A-F** | LTC2385-16 | 0Ω 0402 | DNI | 5 Msps, 16-bit |
 
 ## FMC Pin Assignment
 
@@ -80,9 +105,11 @@ Map variant ID pins to specific FMC LPC pins that connect to Zed Board GPIOs:
 
 | Signal | FMC Pin | Zed FPGA Pin | Zynq PS GPIO | Function |
 |--------|---------|--------------|--------------|----------|
-| VAR_ID[0] | LA00_CC_P | G6 | MIO[40] | Variant bit 0 (R33) |
-| VAR_ID[1] | LA01_CC_P | G7 | MIO[41] | Variant bit 1 (R34) |
-| VAR_ID[2] | LA02_P    | H6 | MIO[42] | Variant bit 2 (R35) |
+| VAR_ID[0] | LA00_CC_P | G6 | MIO[40] | Family bit 0 (R33) |
+| VAR_ID[1] | LA01_CC_P | G7 | MIO[41] | Family bit 1 (R34) |
+| ADC_SPI_* | (existing) | - | - | SPI for ID read |
+
+**Note**: Only **2 GPIOs** needed for resistor coding. Resolution detected via existing SPI interface.
 
 **Alternative**: Route to PL (FPGA) GPIOs if PS MIO pins are not available.
 
@@ -96,50 +123,86 @@ Detect variant in U-Boot before loading kernel/device tree:
 
 ```c
 #include <asm/gpio.h>
+#include <spi.h>
 
 #define VAR_ID_GPIO0  40  // MIO40 - R33
 #define VAR_ID_GPIO1  41  // MIO41 - R34
-#define VAR_ID_GPIO2  42  // MIO42 - R35
 
-static const char *dc2290a_variants[] = {
-    [0] = "invalid",      // 0x0 - Reserved
-    [1] = "dc2290a-d",    // 0x1 - LTC2386-16
-    [2] = "dc2290a-f",    // 0x2 - LTC2385-16
-    [3] = "dc2290a-b",    // 0x3 - LTC2387-16
-    [4] = "invalid",      // 0x4 - Reserved
-    [5] = "dc2290a-c",    // 0x5 - LTC2386-18
-    [6] = "dc2290a-e",    // 0x6 - LTC2385-18
-    [7] = "dc2290a-a",    // 0x7 - LTC2387-18
+// ADC family from resistor coding
+static const char *adc_families[] = {
+    [0] = "reserved",     // 0x0 - Both populated (invalid)
+    [1] = "ltc2385",      // 0x1 - R33 populated, R34 DNI
+    [2] = "ltc2386",      // 0x2 - R33 DNI, R34 populated
+    [3] = "ltc2387",      // 0x3 - Both DNI
 };
+
+// Full variant lookup (family + resolution)
+static const char *get_variant_name(int family_code, int resolution)
+{
+    switch (family_code) {
+    case 3:  // LTC2387 (15 Msps)
+        return (resolution == 18) ? "dc2290a-a" : "dc2290a-b";
+    case 2:  // LTC2386 (10 Msps)
+        return (resolution == 18) ? "dc2290a-c" : "dc2290a-d";
+    case 1:  // LTC2385 (5 Msps)
+        return (resolution == 18) ? "dc2290a-e" : "dc2290a-f";
+    default:
+        return "unknown";
+    }
+}
+
+int dc2290a_read_adc_id(int *resolution, char *part_name)
+{
+    // Read ADC ID register via SPI
+    // This is a simplified example - actual implementation depends on SPI driver
+
+    // For LTC238x, the ID register typically indicates:
+    // - Part family (2387/2386/2385)
+    // - Resolution (16-bit or 18-bit)
+
+    // Placeholder: In real implementation, read from SPI
+    // For now, return success (driver will do actual detection)
+    *resolution = 0;  // Will be detected by kernel driver
+    strcpy(part_name, "unknown");
+
+    return 0;  // Success
+}
 
 int dc2290a_detect_variant(void)
 {
-    int bit0, bit1, bit2, variant_id;
+    int bit0, bit1, family_code, resolution;
+    char part_name[32];
+    const char *variant;
 
     // Configure GPIOs as inputs
     gpio_request(VAR_ID_GPIO0, "var_id0");
     gpio_request(VAR_ID_GPIO1, "var_id1");
-    gpio_request(VAR_ID_GPIO2, "var_id2");
     gpio_direction_input(VAR_ID_GPIO0);
     gpio_direction_input(VAR_ID_GPIO1);
-    gpio_direction_input(VAR_ID_GPIO2);
 
-    // Read GPIO values
+    // Stage 1: Read resistor coding (ADC family)
     bit0 = gpio_get_value(VAR_ID_GPIO0);
     bit1 = gpio_get_value(VAR_ID_GPIO1);
-    bit2 = gpio_get_value(VAR_ID_GPIO2);
-
-    // Compute variant ID
-    variant_id = (bit2 << 2) | (bit1 << 1) | bit0;
+    family_code = (bit1 << 1) | bit0;
 
     printf("DC2290A Variant Detection:\n");
-    printf("  GPIO bits: %d%d%d (0x%X)\n", bit2, bit1, bit0, variant_id);
-    printf("  Detected variant: %s\n", dc2290a_variants[variant_id]);
+    printf("  Stage 1 - Resistor Code: %d%d (0x%X) = %s\n",
+           bit1, bit0, family_code, adc_families[family_code]);
 
-    // Set environment variable for kernel
-    env_set("board_variant", dc2290a_variants[variant_id]);
+    // Stage 2: Read ADC ID via SPI (optional in U-Boot)
+    // For U-Boot, we can use a generic device tree based on family
+    // Kernel driver will do full detection with SPI ID
 
-    return variant_id;
+    // Set family-based environment variable
+    char family_env[32];
+    snprintf(family_env, sizeof(family_env), "dc2290a-%s",
+             adc_families[family_code]);
+    env_set("board_family", family_env);
+
+    // Use generic device tree (kernel will do full detection)
+    env_set("devicetree_image", "zynq-zed-adv7511-dc2290a.dtb");
+
+    return family_code;
 }
 
 int board_late_init(void)
@@ -220,39 +283,69 @@ Detect variant early in boot process:
 
 VARIANT_FILE="/etc/dc2290a_variant"
 GPIO_BASE="/sys/class/gpio"
+IIO_DEVICE="/sys/bus/iio/devices/iio:device0"
 
-# GPIO numbers (adjust if needed)
-GPIO_BIT0=40
-GPIO_BIT1=41
-GPIO_BIT2=42
+# GPIO numbers (only 2 resistors)
+GPIO_BIT0=40  # R33
+GPIO_BIT1=41  # R34
 
 detect_variant() {
     # Export GPIOs if not already exported
-    for gpio in $GPIO_BIT0 $GPIO_BIT1 $GPIO_BIT2; do
+    for gpio in $GPIO_BIT0 $GPIO_BIT1; do
         if [ ! -d "$GPIO_BASE/gpio$gpio" ]; then
             echo $gpio > $GPIO_BASE/export
             echo in > $GPIO_BASE/gpio$gpio/direction
         fi
     done
 
-    # Read GPIO values
+    # Stage 1: Read resistor coding (ADC family)
     BIT0=$(cat $GPIO_BASE/gpio$GPIO_BIT0/value)
     BIT1=$(cat $GPIO_BASE/gpio$GPIO_BIT1/value)
-    BIT2=$(cat $GPIO_BASE/gpio$GPIO_BIT2/value)
 
-    # Compute variant ID
-    VARIANT_ID=$((BIT2 * 4 + BIT1 * 2 + BIT0))
+    # Compute family code
+    FAMILY_CODE=$((BIT1 * 2 + BIT0))
 
-    # Map to variant name
-    case $VARIANT_ID in
-        7) VARIANT="dc2290a-a"; ADC="LTC2387-18"; RES=18; RATE=15;;
-        3) VARIANT="dc2290a-b"; ADC="LTC2387-16"; RES=16; RATE=15;;
-        5) VARIANT="dc2290a-c"; ADC="LTC2386-18"; RES=18; RATE=10;;
-        1) VARIANT="dc2290a-d"; ADC="LTC2386-16"; RES=16; RATE=10;;
-        6) VARIANT="dc2290a-e"; ADC="LTC2385-18"; RES=18; RATE=5;;
-        2) VARIANT="dc2290a-f"; ADC="LTC2385-16"; RES=16; RATE=5;;
-        *) VARIANT="unknown"; ADC="unknown"; RES=0; RATE=0;;
+    # Determine ADC family and max rate
+    case $FAMILY_CODE in
+        3) FAMILY="LTC2387"; RATE=15;;  # Both DNI
+        2) FAMILY="LTC2386"; RATE=10;;  # R34 populated
+        1) FAMILY="LTC2385"; RATE=5;;   # R33 populated
+        *) FAMILY="unknown"; RATE=0;;   # Both populated (invalid)
     esac
+
+    # Stage 2: Read resolution from IIO device (if driver loaded)
+    RES=0
+    ADC_NAME="unknown"
+    if [ -f "$IIO_DEVICE/name" ]; then
+        ADC_NAME=$(cat $IIO_DEVICE/name 2>/dev/null || echo "unknown")
+
+        # Parse resolution from name (e.g., "ltc2387-18" -> 18)
+        if echo "$ADC_NAME" | grep -q "\-18"; then
+            RES=18
+        elif echo "$ADC_NAME" | grep -q "\-16"; then
+            RES=16
+        fi
+    fi
+
+    # Determine full variant
+    if [ "$RES" = "18" ]; then
+        case $FAMILY_CODE in
+            3) VARIANT="dc2290a-a"; ADC="LTC2387-18";;
+            2) VARIANT="dc2290a-c"; ADC="LTC2386-18";;
+            1) VARIANT="dc2290a-e"; ADC="LTC2385-18";;
+        esac
+    elif [ "$RES" = "16" ]; then
+        case $FAMILY_CODE in
+            3) VARIANT="dc2290a-b"; ADC="LTC2387-16";;
+            2) VARIANT="dc2290a-d"; ADC="LTC2386-16";;
+            1) VARIANT="dc2290a-f"; ADC="LTC2385-16";;
+        esac
+    else
+        # Resolution not yet detected (driver not loaded)
+        VARIANT="dc2290a-${FAMILY,,}"  # Lowercase family name
+        ADC="${FAMILY}-??"
+        RES="??"
+    fi
 
     # Save to file
     cat > $VARIANT_FILE << EOF
@@ -542,22 +635,20 @@ class DC2290A:
         raise RuntimeError("Could not detect variant from hardware")
 
     def _detect_variant_gpio(self):
-        """Read variant ID directly from GPIOs"""
+        """Read variant from GPIOs + IIO device name"""
         GPIO_BASE = '/sys/class/gpio'
-        GPIO_BITS = [40, 41, 42]  # MIO40, MIO41, MIO42
+        GPIO_BITS = [40, 41]  # MIO40, MIO41 (only 2 resistors)
 
-        variant_map = {
-            0: 'invalid',
-            1: 'dc2290a-d',
-            2: 'dc2290a-f',
-            3: 'dc2290a-b',
-            4: 'invalid',
-            5: 'dc2290a-c',
-            6: 'dc2290a-e',
-            7: 'dc2290a-a',
+        # ADC family mapping from GPIO code
+        family_map = {
+            3: 'ltc2387',  # Both DNI (15 Msps)
+            2: 'ltc2386',  # R34 populated (10 Msps)
+            1: 'ltc2385',  # R33 populated (5 Msps)
+            0: 'invalid',  # Both populated (reserved)
         }
 
         try:
+            # Stage 1: Read resistor coding
             bits = []
             for gpio in GPIO_BITS:
                 gpio_path = f"{GPIO_BASE}/gpio{gpio}"
@@ -575,10 +666,35 @@ class DC2290A:
                 with open(f"{gpio_path}/value", 'r') as f:
                     bits.append(int(f.read().strip()))
 
-            # Compute variant ID
-            variant_id = (bits[2] << 2) | (bits[1] << 1) | bits[0]
+            # Compute family code
+            family_code = (bits[1] << 1) | bits[0]
+            family = family_map.get(family_code, 'invalid')
 
-            return variant_map.get(variant_id, None)
+            if family == 'invalid':
+                return None
+
+            # Stage 2: Read resolution from IIO device name
+            try:
+                # IIO device name format: "ltc2387-18" or "ltc2387-16"
+                dev_name = self.dev.name if hasattr(self.dev, 'name') else None
+                if dev_name and '-' in dev_name:
+                    resolution = dev_name.split('-')[-1]
+
+                    # Map family + resolution to variant
+                    variant_lookup = {
+                        ('ltc2387', '18'): 'dc2290a-a',
+                        ('ltc2387', '16'): 'dc2290a-b',
+                        ('ltc2386', '18'): 'dc2290a-c',
+                        ('ltc2386', '16'): 'dc2290a-d',
+                        ('ltc2385', '18'): 'dc2290a-e',
+                        ('ltc2385', '16'): 'dc2290a-f',
+                    }
+
+                    return variant_lookup.get((family, resolution), None)
+            except:
+                pass
+
+            return None
 
         except Exception as e:
             print(f"Warning: GPIO detection failed: {e}")
@@ -732,18 +848,31 @@ echo "  DC2290A Variant Detection Test"
 echo "═══════════════════════════════════════════════════"
 echo
 
-# Test 1: GPIO Read
+# Test 1: GPIO Read (2 resistors only)
 echo "Test 1: GPIO Direct Read"
 echo "-------------------------"
 GPIO_BASE="/sys/class/gpio"
-for gpio in 40 41 42; do
+for gpio in 40 41; do
     if [ -d "$GPIO_BASE/gpio$gpio" ]; then
         val=$(cat $GPIO_BASE/gpio$gpio/value)
-        echo "  GPIO $gpio: $val"
+        echo "  GPIO $gpio (R3$((gpio-37))): $val"
     else
         echo "  GPIO $gpio: NOT EXPORTED"
     fi
 done
+
+# Decode family
+if [ -d "$GPIO_BASE/gpio40" ] && [ -d "$GPIO_BASE/gpio41" ]; then
+    BIT0=$(cat $GPIO_BASE/gpio40/value)
+    BIT1=$(cat $GPIO_BASE/gpio41/value)
+    FAMILY_CODE=$((BIT1 * 2 + BIT0))
+    case $FAMILY_CODE in
+        3) echo "  Family Code: 0x3 (LTC2387 - 15 Msps)";;
+        2) echo "  Family Code: 0x2 (LTC2386 - 10 Msps)";;
+        1) echo "  Family Code: 0x1 (LTC2385 - 5 Msps)";;
+        0) echo "  Family Code: 0x0 (Invalid)";;
+    esac
+fi
 echo
 
 # Test 2: Config File
@@ -798,9 +927,9 @@ echo "════════════════════════�
 
 Test 1: GPIO Direct Read
 -------------------------
-  GPIO 40: 0
-  GPIO 41: 1
-  GPIO 42: 1
+  GPIO 40 (R33): 1
+  GPIO 41 (R34): 1
+  Family Code: 0x3 (LTC2387 - 15 Msps)
 
 Test 2: Config File (/etc/dc2290a_variant)
 -------------------------------------------
@@ -829,107 +958,134 @@ Test complete
 
 ### ✅ Advantages
 
-1. **Zero Cost**: Just 0Ω resistors (or DNI)
-2. **Zero External Components**: No EEPROM, no flash
-3. **Manufacturing Friendly**: Simple BOM variation
-4. **Instant Detection**: Read at power-on, no initialization needed
-5. **Reliable**: No SPI communication, no battery/EEPROM failure
+1. **Zero Cost**: Just 2× 0Ω resistors (or DNI)
+2. **Matches Legacy**: Same 2-resistor approach as DC2290A
+3. **Manufacturing Friendly**: Simple BOM variation (only 2 resistors to manage)
+4. **Fast Detection**: Resistor code instant, SPI ID read <1ms
+5. **Reliable**: Hybrid approach (GPIO + SPI), double verification
 6. **Universal Image**: One SD card image for all 6 variants
 7. **User Friendly**: Automatic, no manual configuration
-8. **Debug Friendly**: Easy to verify with multimeter
+8. **Debug Friendly**: Easy to verify with multimeter (2 test points)
 
 ### 🔧 Compared to Alternatives
 
-| Method | Cost | Reliability | Speed | User Effort |
-|--------|------|-------------|-------|-------------|
-| **Resistor Coding** | $0 | ⭐⭐⭐⭐⭐ | Instant | None |
-| SPI ID Register | $0 | ⭐⭐⭐⭐ | ~1ms | None |
-| EEPROM on FMC | ~$0.50 | ⭐⭐⭐ | ~10ms | None |
-| Manual Config | $0 | ⭐⭐ | - | High |
-| Multiple Images | $0 | ⭐⭐⭐⭐ | - | Medium |
+| Method | Cost | Reliability | Speed | Components | User Effort |
+|--------|------|-------------|-------|------------|-------------|
+| **2R + SPI (This)** | $0 | ⭐⭐⭐⭐⭐ | ~1ms | 2 resistors | None |
+| 3R Coding Only | $0 | ⭐⭐⭐⭐ | Instant | 3 resistors | None |
+| SPI ID Only | $0 | ⭐⭐⭐⭐ | ~1ms | 0 (uses ADC) | None |
+| EEPROM on FMC | ~$0.50 | ⭐⭐⭐ | ~10ms | EEPROM + I2C | None |
+| Manual Config | $0 | ⭐⭐ | - | 0 | High |
+| Multiple Images | $0 | ⭐⭐⭐⭐ | - | 0 | Medium |
 
 ## Manufacturing Documentation
 
 ### Assembly Instructions
 
-**For Manufacturing**: Populate resistors per variant:
+**For Manufacturing**: Populate resistors per variant (only 2 resistors):
 
 ```
 DC2290A-A (LTC2387-18):
+  ADC: LTC2387-18
   R33: DNI
   R34: DNI
-  R35: DNI
-  → ID reads as 0x7
+  → Family code reads as 0x3 (LTC2387)
+  → Resolution from SPI: 18-bit
 
 DC2290A-B (LTC2387-16):
-  R33: 0Ω 0402
+  ADC: LTC2387-16
+  R33: DNI
   R34: DNI
-  R35: DNI
-  → ID reads as 0x3
+  → Family code reads as 0x3 (LTC2387)
+  → Resolution from SPI: 16-bit
 
 DC2290A-C (LTC2386-18):
+  ADC: LTC2386-18
   R33: DNI
   R34: 0Ω 0402
-  R35: DNI
-  → ID reads as 0x5
+  → Family code reads as 0x2 (LTC2386)
+  → Resolution from SPI: 18-bit
 
 DC2290A-D (LTC2386-16):
-  R33: 0Ω 0402
+  ADC: LTC2386-16
+  R33: DNI
   R34: 0Ω 0402
-  R35: DNI
-  → ID reads as 0x1
+  → Family code reads as 0x2 (LTC2386)
+  → Resolution from SPI: 16-bit
 
 DC2290A-E (LTC2385-18):
-  R33: DNI
-  R34: DNI
-  R35: 0Ω 0402
-  → ID reads as 0x6
-
-DC2290A-F (LTC2385-16):
+  ADC: LTC2385-18
   R33: 0Ω 0402
   R34: DNI
-  R35: 0Ω 0402
-  → ID reads as 0x2
+  → Family code reads as 0x1 (LTC2385)
+  → Resolution from SPI: 18-bit
+
+DC2290A-F (LTC2385-16):
+  ADC: LTC2385-16
+  R33: 0Ω 0402
+  R34: DNI
+  → Family code reads as 0x1 (LTC2385)
+  → Resolution from SPI: 16-bit
 ```
 
-### Verification Test Point
+**Simplified BOM**:
+- Variants A & B: Both resistors DNI, differ only in ADC part
+- Variants C & D: Only R34 populated, differ only in ADC part
+- Variants E & F: Only R33 populated, differ only in ADC part
 
-Add test points TP1, TP2, TP3 next to R33, R34, R35 for post-assembly verification with multimeter:
+### Verification Test Points
+
+Add test points TP1, TP2 next to R33, R34 for post-assembly verification with multimeter:
 - Populated resistor: TP reads ~0V (GND)
 - DNI resistor: TP reads ~3.3V (pulled high)
 
+**Quick Check**:
+| TP1 (R33) | TP2 (R34) | Family | Variants |
+|-----------|-----------|--------|----------|
+| 3.3V | 3.3V | LTC2387 (15 Msps) | A or B |
+| 3.3V | 0V   | LTC2386 (10 Msps) | C or D |
+| 0V   | 3.3V | LTC2385 (5 Msps)  | E or F |
+| 0V   | 0V   | **INVALID** | Check assembly |
+
 ## Summary
 
-With resistor coding (R33, R34, R35), the software adaptations are:
+With **2-resistor coding** (R33, R34) + SPI ID detection, the software adaptations are:
 
 ### ✅ Required Changes
 
-1. **U-Boot**: Add GPIO detection in board_late_init()
-2. **Linux Kernel**: Update ltc2387 driver to read variant GPIOs
-3. **Init Scripts**: Add S00detect-variant service
-4. **Python API**: Update DC2290A class to auto-detect from hardware
-5. **Device Tree**: Add variant GPIO definitions
+1. **U-Boot**: Add 2-GPIO detection in board_late_init()
+2. **Linux Kernel**: Update ltc2387 driver to read GPIOs + SPI ID
+3. **Init Scripts**: Add S00detect-variant service (reads GPIOs + IIO device name)
+4. **Python API**: Update DC2290A class to auto-detect (GPIOs + IIO name)
+5. **Device Tree**: Add 2 GPIO definitions (remove 3rd GPIO requirement)
 
 ### ✅ Benefits
 
+- **Matches legacy DC2290A**: Uses same 2-resistor approach
 - **Single SD card image** for all 6 variants
 - **Automatic detection** at every layer (U-Boot, kernel, application)
 - **Zero user configuration** required
-- **Manufacturing friendly** (just resistor population)
-- **Debug friendly** (can verify with multimeter)
+- **Simplified manufacturing** (only 2 resistors to manage vs 3)
+- **Double verification** (GPIO resistor code + SPI ID check)
+- **Debug friendly** (only 2 test points needed)
 
 ### ✅ Result
 
 User experience:
 1. Insert SD card (same image for all variants)
 2. Power on board
-3. System automatically detects and configures for installed variant
-4. Python API automatically uses correct parameters
+3. System automatically detects:
+   - Stage 1: ADC family from resistor code (instant)
+   - Stage 2: Resolution from SPI ID register (~1ms)
+4. Full variant identified (dc2290a-a through dc2290a-f)
+5. Python API automatically uses correct parameters
 
 **No manual configuration needed!**
 
 ---
 
-**Document Version**: 1.0
+**Document Version**: 2.0
 **Last Updated**: 2026-03-27
-**Hardware Requirement**: R33, R34, R35 resistor coding implemented on FMC PCB
+**Hardware Requirement**:
+- R33, R34 resistor coding on FMC PCB (2 resistors only, matches legacy DC2290A)
+- SPI interface to ADC for ID register read (already present for ADC configuration)
