@@ -175,7 +175,8 @@ adc.plot_fft(data)
 - [ADC Specifications](docs/adc-specifications.md) - LTC238x detailed specifications
 
 ### Migration Guides
-- [Variant Integration Guide](docs/variant-integration.md) - **NEW**: How one design supports all 6 variants
+- [Variant Integration Guide](docs/variant-integration.md) - How one design supports all 6 variants
+- [Hardware Variant Detection](docs/hardware-variant-detection.md) - **NEW**: Resistor coding for auto-detection
 - [Migration Checklist](docs/migration-checklist.md) - Step-by-step migration tasks
 - [Comparison: Legacy vs New](docs/comparison-table.md) - DC2290A vs FMC design
 - [Technical Specifications](docs/technical-specs.md) - Detailed specifications

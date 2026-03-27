@@ -567,6 +567,12 @@ Test each layer with all 6 variants:
 
 ## Variant Detection Implementation
 
+**⭐ RECOMMENDED: Hardware Resistor Coding**
+
+The preferred method is **resistor coding** using R33, R34, R35 on the FMC card (similar to legacy DC2290A). This provides automatic, zero-cost variant detection at boot time.
+
+**See**: [Hardware Variant Detection Guide](hardware-variant-detection.md) for complete implementation details.
+
 ### Method 1: Device Tree Property (Simple)
 
 User specifies variant when flashing SD card or in boot config:
@@ -606,7 +612,32 @@ static int ltc2387_detect_variant(struct spi_device *spi) {
 }
 ```
 
-### Method 3: EEPROM on FMC Card (Robust)
+### Method 3: Resistor Coding on FMC (RECOMMENDED)
+
+**Resistor coding using R33, R34, R35** provides instant, zero-cost variant identification:
+
+```
+3-bit GPIO code using resistor population:
+  R33 (0Ω or DNI) → GPIO bit 0
+  R34 (0Ω or DNI) → GPIO bit 1
+  R35 (0Ω or DNI) → GPIO bit 2
+
+Resistor populated → GPIO reads 0 (pulled to GND)
+Resistor DNI → GPIO reads 1 (pulled high)
+
+Example: DC2290A-B has R33=0Ω, R34=DNI, R35=DNI
+  → Reads as 011 (binary) = 0x3 = dc2290a-b
+```
+
+**Benefits**:
+- Zero cost (just resistor population)
+- Instant detection at boot
+- No external components needed
+- Manufacturing friendly
+
+**See**: [Hardware Variant Detection Guide](hardware-variant-detection.md) for complete software stack implementation.
+
+### Method 4: EEPROM on FMC Card (Alternative)
 
 Store variant info in FMC EEPROM:
 
@@ -617,6 +648,8 @@ FMC EEPROM:
   Offset 0x10: ADC part number
   Offset 0x20: Calibration data
 ```
+
+Cost: ~$0.50 per board, adds complexity.
 
 ## Conclusion
 
