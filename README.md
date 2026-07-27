@@ -242,6 +242,8 @@ For questions or issues:
 - **Zed Board Support**: [Xilinx/Avnet support forums](https://www.xilinx.com)
 - **Project Questions**: Contact the migration team
 
+_Last updated: July 27, 2026_
+
 ## Acknowledgments
 
 - **Analog Devices**: DC2290A legacy boards, CN0577 reference design, HDL IP cores
